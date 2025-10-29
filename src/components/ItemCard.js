@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom'; // <-- Import Link
  */
 // Tambahkan 'id' ke dalam daftar props
 export default function ItemCard({ id, title, status, location, imageUrl, date }) {
+    console.log(`ItemCard menerima id: ${id} untuk title: ${title}`);
   const isLost = status === 'Hilang';
 
   // Tentukan warna label berdasarkan status

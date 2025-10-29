@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom'; // <-- Import useParams dan Link
+import { useParams, Link } from 'react-router-dom'; // <-- Pastikan useParams diimpor
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -21,35 +21,32 @@ const allItems = [
         id: 2,
         title: 'Dompet Kulit Coklat',
         status: 'Hilang',
-        location: 'Kantin Pusat',
-        date: '29 Okt 2025, sekitar pukul 12:30',
-        imageUrl: 'https://via.placeholder.com/600x400?text=Dompet',
-        description: 'Dompet kulit warna coklat tua, berisi KTP, SIM, dan beberapa kartu ATM. Terakhir diletakkan di meja makan kantin.',
-        reporterName: 'Budi Santoso',
-        contactInfo: 'WA: 0812-xxxx-xxxx',
-        reportDate: '29 Oktober 2025',
+        location: 'Parkiran Gedung B',
+        // ... detail lainnya
     },
     {
         id: 3,
         title: 'Laptop Dell XPS 13',
         status: 'Hilang',
-        location: 'Perpustakaan, Lantai 3',
-        date: '28 Oktober 2025, sekitar pukul 14:00',
-        imageUrl: 'https://via.placeholder.com/600x400?text=Laptop+Dell',
-        description: 'Laptop Dell XPS 13 warna silver, ada stiker lingkaran kecil di pojok kanan atas. Terakhir terlihat di meja dekat jendela di lantai 3 perpustakaan pusat. Mohon jika ada yang menemukan bisa menghubungi saya.',
-        reporterName: 'Mahasiswa A',
-        contactInfo: 'Email: mahasiswa.a@example.com',
-        reportDate: '28 Oktober 2025',
+       // ... detail lainnya
     },
-    // ... item lainnya dari BrowsePage.js
+    // ... item lainnya
 ];
 
 
 export default function DetailPage() {
-  const { itemId } = useParams(); // <-- Ambil itemId dari URL
+  const params = useParams(); // <-- Ambil semua parameter
+  const itemId = params.itemId; // <-- Ambil itemId secara spesifik
 
-  // Cari item berdasarkan itemId. Ingat itemId dari URL berupa string, ID di data mungkin number.
+  // --- TAMBAHKAN INI UNTUK DEBUGGING ---
+  console.log('Parameter dari URL:', params);
+  console.log('Nilai itemId:', itemId);
+  // --- AKHIR DEBUGGING ---
+
+  // Cari item berdasarkan itemId.
   const itemDetail = allItems.find(item => item.id.toString() === itemId);
+
+  console.log('Item yang ditemukan:', itemDetail); // <-- Tambahkan log ini juga
 
   // Handle jika item tidak ditemukan
   if (!itemDetail) {
@@ -58,6 +55,7 @@ export default function DetailPage() {
         <Navbar />
         <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Item Tidak Ditemukan</h1>
+          {/* Tampilkan itemId yang diterima untuk debugging */}
           <p className="text-gray-600 mb-6">Maaf, item dengan ID "{itemId}" tidak dapat ditemukan.</p>
           <Link to="/cari" className="text-indigo-600 hover:underline">Kembali ke Daftar Barang</Link>
         </main>

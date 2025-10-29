@@ -95,6 +95,7 @@ export default function BrowsePage() {
             <ItemCard
               // Gunakan ID unik sebagai key
               key={item.id}
+              id={item.id}
               title={item.title}
               status={item.status}
               location={item.location}

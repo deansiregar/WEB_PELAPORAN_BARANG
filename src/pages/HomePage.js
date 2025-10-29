@@ -76,7 +76,8 @@ export default function HomePage() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {recentItems.map((item, index) => (
             <ItemCard
-              key={index}
+              key={item.id || index}
+              id={item.id}
               title={item.title}
               status={item.status}
               location={item.location}
