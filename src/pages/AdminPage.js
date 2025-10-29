@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function AdminPage() {
-    // State untuk data Pending
     const [pendingReports, setPendingReports] = useState([]);
-    // State untuk data Processed (Published/Rejected)
     const [processedReports, setProcessedReports] = useState([]);
-    
-    // State UI
     const [view, setView] = useState('pending'); // 'pending' atau 'processed'
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -20,142 +16,105 @@ export default function AdminPage() {
 
     const getToken = () => localStorage.getItem('adminToken');
     
-    // --- Fungsi Fetch Data Pending ---
-    const fetchPendingReports = async () => {
+    // --- Utils ---
+    const checkAuthAndFetch = async (url, options = {}) => {
         const token = getToken();
-        if (!token) { navigate('/login'); return; }
+        if (!token) {
+            navigate('/login');
+            return null;
+        }
 
-        setIsLoading(true);
-        setError(null);
-        try {
-            const response = await fetch('http://localhost:8000/api/admin/reports/pending', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.removeItem('adminToken');
-                navigate('/login');
-                return;
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`
             }
-            if (!response.ok) { throw new Error('Gagal mengambil data laporan pending'); }
-            
-            const data = await response.json();
-            setPendingReports(data);
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('adminToken');
+            alert('Sesi admin berakhir. Silakan login kembali.');
+            navigate('/login');
+            return null;
+        }
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || `Request gagal: Status ${response.status}`);
+        }
+        return response;
+    };
+    // --- Akhir Utils ---
+
+    // --- Fungsi Fetch Data ---
+    const fetchPendingReports = async () => {
+        try {
+            const response = await checkAuthAndFetch('http://localhost:8000/api/admin/reports/pending');
+            if (response) {
+                const data = await response.json();
+                setPendingReports(data);
+            }
         } catch (err) {
-            console.error("Error fetching pending reports:", err);
             setError(err.message);
-        } finally {
-            setIsLoading(false);
         }
     };
 
-    // --- Fungsi Fetch Data Processed ---
     const fetchProcessedReports = async () => {
-        const token = getToken();
-        if (!token) return;
-
-        setIsLoading(true);
-        setError(null);
         try {
-            const response = await fetch('http://localhost:8000/api/admin/reports/processed', {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.removeItem('adminToken');
-                navigate('/login');
-                return;
+            const response = await checkAuthAndFetch('http://localhost:8000/api/admin/reports/processed');
+            if (response) {
+                const data = await response.json();
+                setProcessedReports(data);
             }
-            if (!response.ok) { throw new Error('Gagal mengambil data laporan selesai'); }
-            
-            const data = await response.json();
-            setProcessedReports(data);
         } catch (err) {
-            console.error("Error fetching processed reports:", err);
             setError(err.message);
-        } finally {
-            setIsLoading(false);
+        }
+    };
+    // --- Akhir Fungsi Fetch Data ---
+    
+    // --- Fungsi Aksi ---
+    const handleAction = async (id, endpoint, successMessage, errorPrefix) => {
+        try {
+            const response = await checkAuthAndFetch(`http://localhost:8000/api/admin/reports/${id}/${endpoint}`, {
+                method: 'PATCH',
+            });
+            
+            if (response) {
+                alert(successMessage);
+                // Refresh kedua daftar (atau panggil yang spesifik)
+                fetchPendingReports(); 
+                fetchProcessedReports(); 
+            }
+        } catch (err) {
+            alert(`${errorPrefix}: ${err.message}`);
+        }
+    };
+
+    const handleApprove = (id) => handleAction(id, 'approve', `Laporan ID ${id} disetujui.`, 'Gagal menyetujui');
+    const handleReject = (id) => handleAction(id, 'reject', `Laporan ID ${id} ditolak.`, 'Gagal menolak');
+    const handleMarkFound = (id) => {
+        if (window.confirm("Apakah Anda yakin menandai barang ini sudah DITEMUKAN? Status laporan akan diubah.")) {
+            handleAction(id, 'mark-found', `Laporan ID ${id} berhasil diubah menjadi Ditemukan.`, 'Gagal menandai ditemukan');
         }
     };
     
-    // --- Fungsi Delete Permanen ---
     const handleDeletePermanent = async (id) => {
         if (!window.confirm("Yakin hapus permanen? Aksi ini tidak dapat dibatalkan, dan file gambar akan dihapus dari server!")) {
             return;
         }
-
-        const token = getToken();
-        if (!token) return;
-
         try {
-            const response = await fetch(`http://localhost:8000/api/admin/reports/${id}`, {
+             const response = await checkAuthAndFetch(`http://localhost:8000/api/admin/reports/${id}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
             });
-
-            if (response.status === 401 || response.status === 403) {
-                alert('Sesi admin berakhir. Silakan login kembali.');
-                localStorage.removeItem('adminToken');
-                navigate('/login');
-                return;
+            if (response) {
+                alert(`Laporan ID ${id} berhasil dihapus permanen.`);
+                fetchProcessedReports(); // Refresh daftar yang sedang aktif
             }
-            if (!response.ok) {
-                 const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.message || 'Gagal menghapus permanen');
-            }
-            
-            alert(`Laporan ID ${id} berhasil dihapus permanen.`);
-            
-            // Setelah sukses, refresh data Processed Reports
-            fetchProcessedReports(); 
-
         } catch (err) {
-            console.error(`Error deleting report ${id}:`, err);
             alert(`Gagal menghapus permanen: ${err.message}`);
         }
     };
-    // --- Akhir Fungsi Delete Permanen ---
-
-    // --- Fungsi Approve & Reject ---
-    const handleApprove = async (id) => {
-        const token = getToken();
-        if (!token) return;
-
-        try {
-            const response = await fetch(`http://localhost:8000/api/admin/reports/${id}/approve`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (response.status === 401 || response.status === 403) { /* ... */ }
-            if (!response.ok) { /* ... */ }
-
-            // Setelah sukses, refresh data pending
-            fetchPendingReports(); 
-            // Dan secara opsional, refresh processed reports juga
-            fetchProcessedReports();
-        } catch (err) { /* ... */ }
-    };
-
-    const handleReject = async (id) => {
-        const token = getToken();
-        if (!token) return;
-
-        try {
-            const response = await fetch(`http://localhost:8000/api/admin/reports/${id}/reject`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (response.status === 401 || response.status === 403) { /* ... */ }
-            if (!response.ok) { /* ... */ }
-
-            // Setelah sukses, refresh data pending
-            fetchPendingReports(); 
-            // Dan secara opsional, refresh processed reports juga
-            fetchProcessedReports();
-        } catch (err) { /* ... */ }
-    };
-    // --- Akhir Fungsi Approve & Reject ---
+    // --- Akhir Fungsi Aksi ---
 
 
     // --- UseEffect untuk Mengambil Data Awal ---
@@ -165,13 +124,21 @@ export default function AdminPage() {
             return;
         }
         
-        // Panggil fetch sesuai view aktif
-        if (view === 'pending') {
-            fetchPendingReports();
-        } else {
-            fetchProcessedReports();
-        }
+        // Panggil fetch awal untuk mendapatkan hitungan
+        Promise.all([fetchPendingReports(), fetchProcessedReports()])
+            .finally(() => setIsLoading(false));
         
+    }, []); 
+
+    useEffect(() => {
+        if (!getToken()) return;
+        // Hanya atur loading saat view berubah, bukan saat load awal
+        setIsLoading(true); 
+        if (view === 'pending') {
+            fetchPendingReports().finally(() => setIsLoading(false));
+        } else {
+            fetchProcessedReports().finally(() => setIsLoading(false));
+        }
     }, [view]); // Jalankan ulang saat 'view' berubah
 
 
@@ -186,25 +153,15 @@ export default function AdminPage() {
                     <div className="flex justify-between h-16">
                         <span className="flex items-center font-bold text-xl text-indigo-600">Admin Panel</span>
                         <div className="flex items-center space-x-4">
-                            <Link to="/" className="text-sm text-gray-600 hover:text-indigo-600">
-                                Situs Utama
-                            </Link>
-                            {/* Tombol Logout */}
-                            <button
-                                onClick={handleLogout} 
-                                className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600"
-                            >
-                                Logout
-                            </button>
+                            <Link to="/" className="text-sm text-gray-600 hover:text-indigo-600">Situs Utama</Link>
+                            <button onClick={handleLogout} className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600">Logout</button>
                         </div>
                     </div>
                 </div>
             </nav>
 
             <main className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-8">
-                    Admin Panel
-                </h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Panel</h1>
 
                 {/* Tombol Toggle View */}
                 <div className="flex mb-6 space-x-4">
@@ -222,16 +179,13 @@ export default function AdminPage() {
                     </button>
                 </div>
 
-
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">
                     {view === 'pending' ? 'Antrian Verifikasi' : 'Laporan Selesai'}
                 </h2>
 
-                {/* Tampilkan Loading atau Error */}
                 {isLoading && <p className="text-center text-gray-500 py-8">Memuat laporan...</p>}
                 {error && <p className="text-center text-red-600 py-8">Error: {error}</p>}
 
-                {/* Tabel (Hanya tampil jika tidak loading/error) */}
                 {!isLoading && !error && (
                     <div className="bg-white shadow overflow-hidden rounded-lg">
                         <div className="overflow-x-auto">
@@ -241,15 +195,12 @@ export default function AdminPage() {
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barang</th>
-                                        {view === 'processed' && 
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th> 
-                                        }
+                                        {view === 'processed' && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>}
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelapor</th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {/* Pesan jika kosong */}
                                     {reportsToDisplay.length === 0 && (
                                         <tr>
                                             <td colSpan={view === 'pending' ? "5" : "6"} className="px-6 py-12 text-center text-gray-500">
@@ -258,14 +209,12 @@ export default function AdminPage() {
                                         </tr>
                                     )}
                                     
-                                    {/* Loop data */}
                                     {reportsToDisplay.map((report) => (
                                         <tr key={report.id}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{report.id}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.report_type}</td> 
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.item}</td> 
                                             
-                                            {/* Kolom Status (Hanya di view processed) */}
                                             {view === 'processed' && 
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.verification_status}</td>
                                             }
@@ -284,27 +233,27 @@ export default function AdminPage() {
                                                 {view === 'pending' ? (
                                                     // Tombol untuk View Pending
                                                     <>
-                                                        <button
-                                                            onClick={() => handleApprove(report.id)}
-                                                            className="text-green-600 hover:text-green-900"
-                                                        >
-                                                            Setujui
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleReject(report.id)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Tolak
-                                                        </button>
+                                                        <button onClick={() => handleApprove(report.id)} className="text-green-600 hover:text-green-900">Setujui</button>
+                                                        <button onClick={() => handleReject(report.id)} className="text-red-600 hover:text-red-900">Tolak</button>
                                                     </>
                                                 ) : (
                                                     // Tombol untuk View Processed
-                                                    <button
-                                                        onClick={() => handleDeletePermanent(report.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Hapus Permanen
-                                                    </button>
+                                                    <>
+                                                        {report.report_type === 'Hilang' && report.verification_status === 'published' && (
+                                                            <button
+                                                                onClick={() => handleMarkFound(report.id)}
+                                                                className="text-blue-600 hover:text-blue-900"
+                                                            >
+                                                                Tandai Ditemukan
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleDeletePermanent(report.id)}
+                                                            className="text-red-600 hover:text-red-900"
+                                                        >
+                                                            Hapus Permanen
+                                                        </button>
+                                                    </>
                                                 )}
                                             </td>
                                         </tr>
