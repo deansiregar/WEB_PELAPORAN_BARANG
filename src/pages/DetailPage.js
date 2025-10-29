@@ -2,26 +2,18 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { allItems } from '../data/items'; // <-- Import data dari file baru
+import { allItems } from '../data/items'; // Import data
 
 export default function DetailPage() {
   const { itemId } = useParams();
-
- 
-
-  // Cari item berdasarkan itemId.
   const itemDetail = allItems.find(item => item.id.toString() === itemId);
 
-
-
-  // Handle jika item tidak ditemukan
   if (!itemDetail) {
     return (
       <div className="min-h-screen bg-gray-100">
         <Navbar />
         <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Item Tidak Ditemukan</h1>
-          {/* Tampilkan itemId yang diterima untuk debugging */}
           <p className="text-gray-600 mb-6">Maaf, item dengan ID "{itemId}" tidak dapat ditemukan.</p>
           <Link to="/cari" className="text-indigo-600 hover:underline">Kembali ke Daftar Barang</Link>
         </main>
@@ -30,17 +22,14 @@ export default function DetailPage() {
     );
   }
 
-  // Jika item ditemukan, lanjutkan render seperti sebelumnya
   const isLost = itemDetail.status === 'Hilang';
   const statusBgColor = isLost ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-  // const statusTextColor = isLost ? 'text-red-600' : 'text-green-600'; // Tidak terpakai?
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
       <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {/* Tombol Kembali */}
         <div className="mb-6">
             <Link to="/cari" className="text-sm text-indigo-600 hover:underline">
                 &larr; Kembali ke Daftar Barang
@@ -48,23 +37,20 @@ export default function DetailPage() {
         </div>
 
         <div className="bg-white shadow rounded-lg overflow-hidden">
-          {/* Gambar Item */}
           <img className="h-64 w-full object-cover lg:h-96" src={itemDetail.imageUrl} alt={itemDetail.title} />
 
           <div className="p-6 lg:p-8">
-            {/* Judul dan Status */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
                 {itemDetail.title}
               </h1>
               <span
-                className={`inline-block px-4 py-1.5 text-sm font-semibold rounded-full ${statusBgColor}`}
+                className={`flex-shrink-0 inline-block px-4 py-1.5 text-sm font-semibold rounded-full ${statusBgColor} mt-2 sm:mt-0`}
               >
                 Status: {itemDetail.status}
               </span>
             </div>
 
-            {/* Detail Informasi */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-sm text-gray-600">
               <div>
                 <strong className="block text-gray-800">Lokasi:</strong>
@@ -80,13 +66,11 @@ export default function DetailPage() {
               </div>
             </div>
 
-            {/* Deskripsi */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Deskripsi</h2>
               <p className="text-gray-700 leading-relaxed">{itemDetail.description}</p>
             </div>
 
-            {/* Informasi Pelapor */}
             <div className="border-t border-gray-200 pt-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-3">Informasi Pelapor</h2>
               <div className="flex items-center mb-4">
@@ -103,7 +87,6 @@ export default function DetailPage() {
               </div>
             </div>
 
-             {/* Tombol Aksi */}
              <div className="mt-8 pt-6 border-t border-gray-200 text-center">
                <button
                  className={`inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${

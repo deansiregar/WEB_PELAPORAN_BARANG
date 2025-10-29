@@ -1,39 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; // Import Link
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ItemCard from '../components/ItemCard';
+import { allItems } from '../data/items'; // Import data
 
-// Di dalam HomePage.js
-const recentItems = [
-  {
-    id: 1, // <-- Tambahkan ID
-    title: 'Kunci Motor Honda',
-    // ...props lainnya
-  },
-  {
-    id: 2, // <-- Tambahkan ID
-    title: 'Dompet Kulit Coklat',
-    // ...props lainnya
-  },
-  {
-    id: 3, // <-- Tambahkan ID
-    title: 'Laptop Dell XPS 13',
-    // ...props lainnya
-  },
-];
-
-// Di bagian render:
-{recentItems.map((item) => ( // Tidak perlu index lagi jika ID unik
-   <ItemCard
-     key={item.id} // <-- Gunakan ID sebagai key
-     id={item.id} // <-- Berikan ID ke ItemCard
-     title={item.title}
-     status={item.status}
-     location={item.location}
-     date={item.date}
-     imageUrl={item.imageUrl}
-   />
-))}
+// Ambil 3 item terbaru dari data dummy
+const recentItems = allItems.slice(0, 3);
 
 export default function HomePage() {
   return (
@@ -49,19 +22,20 @@ export default function HomePage() {
           <p className="mt-4 text-xl text-gray-600">
             Laporkan barang Anda yang hilang atau ditemukan di sini.
           </p>
-          <div className="mt-8 flex justify-center gap-4">
-            <a
-              href="#"
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          {/* Tombol Responsif */}
+          <div className="mt-8 flex justify-center gap-4 flex-col sm:flex-row"> 
+            <Link
+              to="/lapor"
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
             >
-              Saya Kehilangan Barang
-            </a>
-            <a
-              href="#"
-              className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
+              Lapor Kehilangan
+            </Link>
+            <Link
+              to="/lapor"
+              className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
-              Saya Menemukan Barang
-            </a>
+              Lapor Penemuan
+            </Link>
           </div>
         </div>
       </header>
@@ -72,11 +46,10 @@ export default function HomePage() {
           Laporan Terbaru
         </h2>
         
-        {/* Grid Daftar Barang */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {recentItems.map((item, index) => (
+          {recentItems.map((item) => (
             <ItemCard
-              key={item.id || index}
+              key={item.id}
               id={item.id}
               title={item.title}
               status={item.status}
@@ -88,12 +61,12 @@ export default function HomePage() {
         </div>
         
         <div className="text-center mt-8">
-          <a
-            href="#"
+          <Link
+            to="/cari"
             className="text-indigo-600 font-medium hover:text-indigo-800"
           >
             Lihat Semua Laporan &rarr;
-          </a>
+          </Link>
         </div>
       </main>
       

@@ -1,73 +1,78 @@
-import React, { useState, useEffect } from 'react'; // <-- Import useEffect
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import SuccessMessage from '../components/SuccessMessage'; // <-- Import komponen sukses
 
 export default function ReportPage() {
   const [reportType, setReportType] = useState('kehilangan');
-  const [formData, setFormData] = useState({
+  
+  // State untuk form data
+  const initialFormState = {
     itemName: '',
     description: '',
     location: '',
     dateTime: '',
     reporterName: '',
     contact: '',
-  });
-
-  // --- State untuk File Upload ---
-  const [imageFile, setImageFile] = useState(null); // Menyimpan file (objek File)
-  const [imagePreview, setImagePreview] = useState(null); // Menyimpan URL untuk preview
-  // --- Akhir State ---
+  };
+  const [formData, setFormData] = useState(initialFormState);
+  
+  // State untuk file upload
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  
+  // State untuk pesan sukses
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({ ...prevState, [name]: value }));
   };
 
-  // --- Fungsi untuk menangani perubahan file input ---
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file); // Simpan objek file
-      setImagePreview(URL.createObjectURL(file)); // Buat URL preview
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // --- Fungsi untuk menghapus gambar ---
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    // Kita perlu me-reset input file juga
-    document.getElementById('file-upload').value = null;
+    // Reset input file
+    const fileInput = document.getElementById('file-upload');
+    if (fileInput) fileInput.value = null;
   };
 
-  // --- Cleanup URL.createObjectURL untuk menghindari memory leak ---
+  // Cleanup URL.createObjectURL
   useEffect(() => {
-    // Jalankan cleanup function saat komponen unmount atau imagePreview berubah
     return () => {
       if (imagePreview) {
         URL.revokeObjectURL(imagePreview);
       }
     };
   }, [imagePreview]);
-  // --- Akhir Cleanup ---
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const reportData = {
       type: reportType,
       ...formData,
-      // Tambahkan nama file (nanti di backend, kita kirim 'imageFile'-nya)
       imageFileName: imageFile ? imageFile.name : null,
     };
     
     console.log('Data Laporan yang Akan Dikirim:', reportData);
-    // Di aplikasi nyata, Anda akan menggunakan FormData untuk mengirim text + file
-    // const dataToSubmit = new FormData();
-    // dataToSubmit.append('reportData', JSON.stringify(reportData));
-    // dataToSubmit.append('image', imageFile);
-    // axios.post('/api/laporan/baru', dataToSubmit).then(...)
 
-    alert('Laporan (dummy) terkirim! Cek console log.');
+    // Tampilkan pesan sukses
+    setShowSuccess(true);
+    
+    // Reset formulir
+    setFormData(initialFormState);
+    removeImage();
+
+    // Scroll ke atas untuk melihat pesan sukses
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -81,40 +86,97 @@ export default function ReportPage() {
               Buat Laporan Barang
             </h2>
 
-            {/* ... (Tombol Tipe Laporan) ... */}
+            {/* Tampilkan pesan sukses */}
+            {showSuccess && (
+              <SuccessMessage 
+                message="Laporan Anda telah berhasil dikirim (dummy) dan akan segera diverifikasi."
+                onClose={() => setShowSuccess(false)}
+              />
+            )}
+
             <div className="grid grid-cols-2 gap-4 mb-6">
-              {/* ... (tombol 'Saya Kehilangan' dan 'Saya Menemukan') ... */}
+              <button
+                onClick={() => setReportType('kehilangan')}
+                className={`py-3 px-4 rounded-md font-medium text-sm ${
+                  reportType === 'kehilangan'
+                    ? 'bg-indigo-600 text-white shadow'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Saya Kehilangan
+              </button>
+              <button
+                onClick={() => setReportType('penemuan')}
+                className={`py-3 px-4 rounded-md font-medium text-sm ${
+                  reportType === 'penemuan'
+                    ? 'bg-indigo-600 text-white shadow'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Saya Menemukan
+              </button>
             </div>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* ... (Input Nama Barang, Deskripsi, Lokasi, Waktu) ... */}
+              <div>
+                <label htmlFor="itemName" className="block text-sm font-medium text-gray-700">Nama Barang</label>
+                <input
+                  type="text" name="itemName" id="itemName"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="cth: iPhone 12 Pro Max"
+                  value={formData.itemName} onChange={handleInputChange} required
+                />
+              </div>
 
-              {/* --- Area Upload Foto --- */}
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">Deskripsi</label>
+                <textarea
+                  id="description" name="description" rows={4}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="Detail barang, ciri-ciri, dll."
+                  value={formData.description} onChange={handleInputChange} required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                    Lokasi {reportType === 'kehilangan' ? 'Kehilangan' : 'Penemuan'}
+                  </label>
+                  <input
+                    type="text" name="location" id="location"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    placeholder="cth: Perpustakaan Kampus"
+                    value={formData.location} onChange={handleInputChange} required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dateTime" className="block text-sm font-medium text-gray-700">Waktu Kejadian</label>
+                  <input
+                    type="datetime-local" name="dateTime" id="dateTime"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    value={formData.dateTime} onChange={handleInputChange} required
+                  />
+                </div>
+              </div>
+
+              {/* Area Upload Foto */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">Foto Barang</label>
-                
-                {/* Tampilkan preview jika ada */}
                 {imagePreview ? (
                   <div className="mt-2 relative">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-full h-auto max-h-64 object-contain rounded-md border border-gray-300" 
-                    />
+                    <img src={imagePreview} alt="Preview" className="w-full h-auto max-h-64 object-contain rounded-md border border-gray-300" />
                     <button
-                      type="button"
-                      onClick={removeImage}
+                      type="button" onClick={removeImage}
                       className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 shadow-md hover:bg-red-700"
                       aria-label="Hapus gambar"
                     >
-                      {/* Ikon 'X' (Hapus) */}
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
                     </button>
                   </div>
                 ) : (
-                  // Tampilkan kotak upload jika tidak ada preview
                   <div className="mt-1 flex justify-center rounded-md border-2 border-dashed border-gray-300 px-6 pt-5 pb-6">
                     <div className="space-y-1 text-center">
                       <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
@@ -123,14 +185,7 @@ export default function ReportPage() {
                       <div className="flex text-sm text-gray-600">
                         <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-medium text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:text-indigo-500">
                           <span>Upload file</span>
-                          <input 
-                            id="file-upload" 
-                            name="file-upload" 
-                            type="file" 
-                            className="sr-only" 
-                            accept="image/*" // Hanya terima file gambar
-                            onChange={handleFileChange} // Hubungkan ke fungsi
-                          />
+                          <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleFileChange} />
                         </label>
                         <p className="pl-1">atau tarik dan lepas</p>
                       </div>
@@ -139,45 +194,31 @@ export default function ReportPage() {
                   </div>
                 )}
               </div>
-              {/* --- Akhir Area Upload Foto --- */}
 
-                          {/* Data Pelapor */}
+              {/* Data Pelapor */}
               <div className="pt-6 border-t border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">Informasi Pelapor</h3>
                 <p className="text-sm text-gray-500 mb-4">Data ini diperlukan agar Anda bisa dihubungi.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="reporterName" className="block text-sm font-medium text-gray-700">
-                      Nama Anda
-                    </label>
+                    <label htmlFor="reporterName" className="block text-sm font-medium text-gray-700">Nama Anda</label>
                     <input
-                      type="text"
-                      name="reporterName" // <-- Sesuaikan name
-                      id="reporterName" // <-- Sesuaikan id
+                      type="text" name="reporterName" id="reporterName"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      value={formData.reporterName} // <-- Hubungkan ke state
-                      onChange={handleInputChange} // <-- Tambahkan onChange
-                      required
+                      value={formData.reporterName} onChange={handleInputChange} required
                     />
                   </div>
                   <div>
-                    <label htmlFor="contact" className="block text-sm font-medium text-gray-700">
-                      Email / No. WhatsApp
-                    </label>
+                    <label htmlFor="contact" className="block text-sm font-medium text-gray-700">Email / No. WhatsApp</label>
                     <input
-                      type="text"
-                      name="contact" // <-- Sesuaikan name
-                      id="contact"
+                      type="text" name="contact" id="contact"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      value={formData.contact} // <-- Hubungkan ke state
-                      onChange={handleInputChange} // <-- Tambahkan onChange
-                      required
+                      value={formData.contact} onChange={handleInputChange} required
                     />
                   </div>
                 </div>
               </div>
-              
-              {/* Tombol Submit */}
+
               <div className="text-right">
                 <button
                   type="submit"
