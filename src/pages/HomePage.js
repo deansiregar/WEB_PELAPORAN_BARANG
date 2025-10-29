@@ -1,28 +1,23 @@
-import React, { useState, useEffect } from 'react'; // <-- Import useState & useEffect
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ItemCard from '../components/ItemCard';
-// Hapus import data dummy: import { allItems } from '../data/items';
 
 export default function HomePage() {
-  // --- State untuk menyimpan data terbaru, loading, dan error ---
   const [latestItems, setLatestItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  // --- Akhir State ---
 
-  // --- Ambil data saat komponen dimuat ---
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    fetch('http://localhost:8000/api/reports') // Panggil API
+    fetch('http://localhost:8000/api/reports')
       .then(res => {
         if (!res.ok) throw new Error('Gagal mengambil data laporan');
         return res.json();
       })
       .then(data => {
-        // Ambil 3 item teratas (API kita sudah mengurutkan DESC by created_at)
         setLatestItems(data.slice(0, 3)); 
         setIsLoading(false);
       })
@@ -31,14 +26,13 @@ export default function HomePage() {
         setError(err.message);
         setIsLoading(false);
       });
-  }, []); // Dependensi kosong, hanya jalan sekali
-  // --- Akhir Fetch Data ---
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      {/* Hero Section (Tetap sama) */}
+      {/* Hero Section */}
       <header className="bg-white shadow">
         <div className="max-w-6xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
@@ -70,36 +64,32 @@ export default function HomePage() {
           Laporan Terbaru
         </h2>
         
-        {/* Tampilkan Loading, Error, atau Data */}
         {isLoading && <p className="text-center text-gray-500">Memuat laporan terbaru...</p>}
         {error && <p className="text-center text-red-600">Error: {error}</p>}
         
         {!isLoading && !error && (
           <>
-            {/* Tampilkan pesan jika tidak ada data */}
             {latestItems.length === 0 && (
               <p className="text-center text-gray-500">Belum ada laporan yang dipublikasikan.</p>
             )}
 
-            {/* Render data dari state 'latestItems' */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {latestItems.map((item) => (
                 <ItemCard
                   key={item.id}
                   id={item.id}
                   title={item.title}
-                  status={item.report_type} // Gunakan field dari backend
+                  status={item.report_type}
                   location={item.location}
-                  // Format tanggal dari backend
                   date={item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-'} 
-                  imageUrl={item.image_url || 'https://via.placeholder.com/300x200?text=No+Image'} // Fallback
+                  imageUrl={item.image_url ? `http://localhost:8000${item.image_url}` : 'https://via.placeholder.com/300x200?text=No+Image'} 
                 />
               ))}
             </div>
           </>
         )}
         
-        {/* Link ke halaman Cari (Tetap sama) */}
+        {/* Link ke halaman Cari */}
         <div className="text-center mt-8">
           <Link
             to="/cari"

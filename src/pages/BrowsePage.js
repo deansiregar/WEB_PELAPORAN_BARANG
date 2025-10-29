@@ -2,19 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ItemCard from '../components/ItemCard';
-// Hapus import data dummy jika masih ada
 
 export default function BrowsePage() {
-  const [allItems, setAllItems] = useState([]); // Data dari API
+  const [allItems, setAllItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Semua Status'); // Nilai: 'Semua Status', 'Hilang', 'Ditemukan'
-  const [isLoading, setIsLoading] = useState(true); // State untuk loading
-  const [error, setError] = useState(null); // State untuk error
+  const [statusFilter, setStatusFilter] = useState('Semua Status');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Ambil data saat komponen dimuat
   useEffect(() => {
-    setIsLoading(true); // Mulai loading
-    setError(null); // Reset error
+    setIsLoading(true);
+    setError(null);
     fetch('http://localhost:8000/api/reports')
       .then(res => {
         if (!res.ok) {
@@ -23,41 +21,40 @@ export default function BrowsePage() {
         return res.json();
       })
       .then(data => {
-        setAllItems(data); // Simpan data ke state
-        setIsLoading(false); // Selesai loading
+        setAllItems(data);
+        setIsLoading(false);
       })
       .catch(err => {
         console.error("Gagal mengambil data:", err);
-        setError(err.message); // Simpan pesan error
-        setIsLoading(false); // Selesai loading (meskipun error)
+        setError(err.message);
+        setIsLoading(false);
       });
-  }, []); // Dependensi kosong, hanya jalan sekali saat mount
+  }, []);
 
-  // Logika Filter (Sudah diperbaiki)
+  // Logika Filter
   const filteredItems = useMemo(() => {
-    // Pastikan allItems bukan array kosong sebelum filter
     if (!allItems || allItems.length === 0) {
         return [];
     }
     
-    return allItems
-      .filter(item => {
-        // --- PERBAIKAN FILTER STATUS ---
-        // Cocokkan dengan 'report_type' dari backend
-        if (statusFilter === 'Semua Status') return true;
-        // Pastikan nama properti 'report_type' sesuai dengan data dari backend
-        return item.report_type === statusFilter; 
-        // --- AKHIR PERBAIKAN ---
-      })
-      .filter(item => {
-        // Filter pencarian (tetap sama)
-        if (searchTerm === '') return true;
-        // Pastikan nama properti 'title' sesuai dengan data dari backend
-        return item.title && item.title.toLowerCase().includes(searchTerm.toLowerCase());
-      });
-  // --- PERBAIKAN DEPENDENSI useMemo ---
-  }, [allItems, searchTerm, statusFilter]); // Tambahkan allItems
-  // --- AKHIR PERBAIKAN ---
+    // 1. Filter Status
+    let itemsToFilter = allItems.filter(item => {
+        if (statusFilter === 'Semua Status') {
+            return true;
+        }
+        return item.report_type === statusFilter;
+    });
+
+    // 2. Filter Pencarian
+    if (searchTerm) {
+        itemsToFilter = itemsToFilter.filter(item => {
+            return item.title && item.title.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+    }
+    
+    return itemsToFilter;
+
+  }, [allItems, searchTerm, statusFilter]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -68,7 +65,7 @@ export default function BrowsePage() {
           Cari Barang Hilang atau Ditemukan
         </h1>
 
-        {/* ... (Kontrol Pencarian dan Filter tetap sama) ... */}
+        {/* Kontrol Pencarian dan Filter */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-8 flex flex-col sm:flex-row gap-4">
           {/* Search Bar */}
           <div className="flex-grow">
@@ -94,20 +91,16 @@ export default function BrowsePage() {
               <option>Ditemukan</option>
             </select>
           </div>
-           {/* Tombol Cari (tetap disabled) */}
-           <button 
-            type="button" 
-            className="flex-shrink-0 inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 opacity-50 cursor-not-allowed"
-            disabled >
-            Cari
-          </button>
+           {/* Placeholder untuk menjaga alignment (Tombol Cari Dihapus) */}
+           <div className="flex-shrink-0 w-16 h-10 sm:h-auto"> 
+           </div>
         </div>
 
         {/* Tampilkan Loading atau Error */}
         {isLoading && <p className="text-center text-gray-500 py-8">Memuat data...</p>}
         {error && <p className="text-center text-red-600 py-8">Error: {error}</p>}
 
-        {/* Grid Daftar Barang (Hanya tampil jika tidak loading dan tidak error) */}
+        {/* Grid Daftar Barang */}
         {!isLoading && !error && (
           <>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -116,13 +109,10 @@ export default function BrowsePage() {
                   key={item.id}
                   id={item.id}
                   title={item.title}
-                  // --- PERBAIKAN PROP STATUS ---
-                  status={item.report_type} // Gunakan report_type dari backend
-                  // --- AKHIR PERBAIKAN ---
+                  status={item.report_type}
                   location={item.location}
-                  // Format tanggal jika perlu (opsional)
                   date={new Date(item.event_date).toLocaleString('id-ID')} 
-                  imageUrl={item.image_url || 'https://via.placeholder.com/300x200?text=No+Image'} // Fallback image
+                  imageUrl={item.image_url ? `http://localhost:8000${item.image_url}` : 'https://via.placeholder.com/300x200?text=No+Image'}
                 />
               ))}
             </div>
@@ -136,8 +126,6 @@ export default function BrowsePage() {
             )}
           </>
         )}
-
-        {/* ... (Pagination bisa ditambahkan nanti) ... */}
       </main>
 
       <Footer />

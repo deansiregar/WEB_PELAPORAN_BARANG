@@ -1,29 +1,23 @@
-import React, { useState, useEffect } from 'react'; // <-- Import useState & useEffect
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-// Hapus import data dummy: import { allItems } from '../data/items'; 
 
 export default function DetailPage() {
-  const { itemId } = useParams(); // Ambil ID dari URL
-
-  // --- State untuk menyimpan detail item, loading, dan error ---
+  const { itemId } = useParams();
   const [itemDetail, setItemDetail] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  // --- Akhir State ---
 
-  // --- Ambil data detail saat komponen dimuat atau itemId berubah ---
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    setItemDetail(null); // Reset detail
-
-    // Panggil API backend untuk detail spesifik
+    setItemDetail(null);
+    
+    // Perbaikan: Pastikan URL menggunakan http://localhost:8000
     fetch(`http://localhost:8000/api/reports/${itemId}`) 
       .then(res => {
         if (!res.ok) {
-          // Handle 404 Not Found secara spesifik
           if (res.status === 404) {
             throw new Error(`Item dengan ID "${itemId}" tidak ditemukan.`);
           }
@@ -32,7 +26,7 @@ export default function DetailPage() {
         return res.json();
       })
       .then(data => {
-        setItemDetail(data); // Simpan data detail ke state
+        setItemDetail(data);
         setIsLoading(false);
       })
       .catch(err => {
@@ -40,10 +34,8 @@ export default function DetailPage() {
         setError(err.message);
         setIsLoading(false);
       });
-  }, [itemId]); // <-- Dependensi: Jalankan ulang jika itemId berubah
-  // --- Akhir Fetch Data ---
+  }, [itemId]);
 
-  // Tampilkan loading
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100">
@@ -56,7 +48,6 @@ export default function DetailPage() {
     );
   }
 
-  // Tampilkan error jika ada
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100">
@@ -71,7 +62,6 @@ export default function DetailPage() {
     );
   }
   
-  // Tampilkan pesan jika item null (seharusnya sudah ditangani oleh error 404)
   if (!itemDetail) {
      return (
        <div className="min-h-screen bg-gray-100">
@@ -86,12 +76,8 @@ export default function DetailPage() {
      );
   }
 
-
-  // Jika data sudah ada, render detailnya
-  // --- Gunakan 'itemDetail' dari state ---
-  const isLost = itemDetail.report_type === 'Hilang'; // Sesuaikan dengan nama field DB
+  const isLost = itemDetail.report_type === 'Hilang';
   const statusBgColor = isLost ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-  // --- Akhir penggunaan state ---
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -105,12 +91,17 @@ export default function DetailPage() {
         </div>
 
         <div className="bg-white shadow rounded-lg overflow-hidden">
-          {/* Gunakan image_url dari backend, beri fallback */}
-          <img 
-            className="h-64 w-full object-cover lg:h-96" 
-            src={itemDetail.image_url || 'https://via.placeholder.com/600x400?text=No+Image'} 
-            alt={itemDetail.title} 
-          />
+          
+          {/* --- PERBAIKAN: HANYA TAMPILKAN GAMBAR JIKA image_url ADA --- */}
+          {itemDetail.image_url && (
+             <img 
+              className="h-64 w-full object-cover lg:h-96" 
+              // Tambahkan localhost:8000 agar gambar dari backend termuat
+              src={`http://localhost:8000${itemDetail.image_url}`} 
+              alt={itemDetail.title} 
+            />
+          )}
+          {/* ------------------------------------------------------------- */}
 
           <div className="p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
@@ -120,23 +111,21 @@ export default function DetailPage() {
               <span
                 className={`flex-shrink-0 inline-block px-4 py-1.5 text-sm font-semibold rounded-full ${statusBgColor} mt-2 sm:mt-0`}
               >
-                Status: {itemDetail.report_type} {/* Gunakan report_type */}
+                Status: {itemDetail.report_type}
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-sm text-gray-600">
               <div>
                 <strong className="block text-gray-800">Lokasi:</strong>
-                <span>{itemDetail.location || '-'}</span> {/* Beri fallback jika null */}
+                <span>{itemDetail.location || '-'}</span>
               </div>
               <div>
                 <strong className="block text-gray-800">Waktu Kejadian:</strong>
-                 {/* Format tanggal */}
                 <span>{itemDetail.event_date ? new Date(itemDetail.event_date).toLocaleString('id-ID') : '-'}</span>
               </div>
               <div>
                 <strong className="block text-gray-800">Tanggal Laporan:</strong>
-                 {/* Format tanggal */}
                 <span>{itemDetail.created_at ? new Date(itemDetail.created_at).toLocaleDateString('id-ID') : '-'}</span>
               </div>
             </div>
@@ -146,6 +135,7 @@ export default function DetailPage() {
               <p className="text-gray-700 leading-relaxed">{itemDetail.description}</p>
             </div>
 
+            {/* Informasi Pelapor */}
             <div className="border-t border-gray-200 pt-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-3">Informasi Pelapor</h2>
               <div className="flex items-center mb-4">
@@ -158,14 +148,14 @@ export default function DetailPage() {
               </div>
             </div>
 
+             {/* PERBAIKAN: GANTI TOMBOL AKSI MENJADI TEKS INSTRUKSI */}
              <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-               <button
-                 className={`inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
-                   isLost ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-green-600 hover:bg-green-700'
-                 }`}
-               >
-                 {isLost ? 'Hubungi Jika Menemukan' : 'Hubungi Pemilik'}
-               </button>
+                <p className="text-lg font-semibold text-gray-800 mb-1">
+                    {isLost ? 'Hubungi Jika Menemukan Barang:' : 'Hubungi Penemu Barang:'}
+                </p>
+                <p className="text-xl font-bold text-indigo-600">
+                    {itemDetail.reporter_contact}
+                </p>
              </div>
           </div>
         </div>
