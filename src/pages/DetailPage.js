@@ -1,52 +1,18 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom'; // <-- Pastikan useParams diimpor
+import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-
-// (Sementara) Definisikan data dummy di sini atau impor dari file terpisah
-const allItems = [
-    {
-        id: 1,
-        title: 'Kunci Motor Honda',
-        status: 'Ditemukan',
-        location: 'Parkiran Gedung A',
-        date: '29 Okt 2025, pukul 10:00',
-        imageUrl: 'https://via.placeholder.com/600x400?text=Kunci+Motor',
-        description: 'Kunci motor Honda Vario ditemukan di dekat tiang parkir P5.',
-        reporterName: 'Satpam Gedung A',
-        contactInfo: 'Pos Satpam',
-        reportDate: '29 Oktober 2025',
-    },
-    {
-        id: 2,
-        title: 'Dompet Kulit Coklat',
-        status: 'Hilang',
-        location: 'Parkiran Gedung B',
-        // ... detail lainnya
-    },
-    {
-        id: 3,
-        title: 'Laptop Dell XPS 13',
-        status: 'Hilang',
-       // ... detail lainnya
-    },
-    // ... item lainnya
-];
-
+import { allItems } from '../data/items'; // <-- Import data dari file baru
 
 export default function DetailPage() {
-  const params = useParams(); // <-- Ambil semua parameter
-  const itemId = params.itemId; // <-- Ambil itemId secara spesifik
+  const { itemId } = useParams();
 
-  // --- TAMBAHKAN INI UNTUK DEBUGGING ---
-  console.log('Parameter dari URL:', params);
-  console.log('Nilai itemId:', itemId);
-  // --- AKHIR DEBUGGING ---
+ 
 
   // Cari item berdasarkan itemId.
   const itemDetail = allItems.find(item => item.id.toString() === itemId);
 
-  console.log('Item yang ditemukan:', itemDetail); // <-- Tambahkan log ini juga
+
 
   // Handle jika item tidak ditemukan
   if (!itemDetail) {
