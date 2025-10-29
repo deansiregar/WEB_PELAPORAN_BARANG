@@ -3,30 +3,37 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ItemCard from '../components/ItemCard';
 
-// Data dummy untuk prototype
+// Di dalam HomePage.js
 const recentItems = [
   {
+    id: 1, // <-- Tambahkan ID
     title: 'Kunci Motor Honda',
-    status: 'Ditemukan',
-    location: 'Parkiran Gedung A',
-    date: '29 Okt 2025',
-    imageUrl: 'https://via.placeholder.com/300x200?text=Kunci+Motor',
+    // ...props lainnya
   },
   {
+    id: 2, // <-- Tambahkan ID
     title: 'Dompet Kulit Coklat',
-    status: 'Hilang',
-    location: 'Kantin Pusat',
-    date: '29 Okt 2025',
-    imageUrl: 'https://via.placeholder.com/300x200?text=Dompet',
+    // ...props lainnya
   },
   {
+    id: 3, // <-- Tambahkan ID
     title: 'Laptop Dell XPS 13',
-    status: 'Hilang',
-    location: 'Perpustakaan, Lantai 3',
-    date: '28 Okt 2025',
-    imageUrl: 'https://via.placeholder.com/300x200?text=Laptop',
+    // ...props lainnya
   },
 ];
+
+// Di bagian render:
+{recentItems.map((item) => ( // Tidak perlu index lagi jika ID unik
+   <ItemCard
+     key={item.id} // <-- Gunakan ID sebagai key
+     id={item.id} // <-- Berikan ID ke ItemCard
+     title={item.title}
+     status={item.status}
+     location={item.location}
+     date={item.date}
+     imageUrl={item.imageUrl}
+   />
+))}
 
 export default function HomePage() {
   return (
